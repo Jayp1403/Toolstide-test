@@ -75,6 +75,9 @@ export default function AdminPage() {
         Create a new article by filling in the fields below. Preview shows how
         it will look before you publish.
       </p>
+      <p>git add lib/api.ts</p>
+      <p>git commit -m "Add new post: My New Post"</p>
+       <p>git push</p>
 
       {/* FORM */}
       <div className="card p-6 space-y-4 bg-slate-900/80 border border-slate-800 rounded-xl">
