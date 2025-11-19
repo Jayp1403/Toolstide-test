@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* -------------- */
+/* Global styling */
+/* -------------- */
+
+body {
+  @apply min-h-screen bg-slate-950 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100 antialiased;
+}
+
+.wrapper {
+  @apply max-w-5xl mx-auto px-4;
+}
+
+a {
+  @apply transition-colors duration-150;
+}
+
+/* Premium card look */
+.card {
+  @apply rounded-xl border border-slate-800 bg-slate-900/60 shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur-md;
+}
+
+/* Section titles */
+.section-title {
+  @apply text-xs font-semibold tracking-[0.2em] uppercase text-slate-400 mb-3;
+}
+
+/* Article body */
+.article-title {
+  @apply text-3xl md:text-4xl font-semibold mb-4;
+}
+
+.article-meta {
+  @apply text-xs font-semibold tracking-[0.2em] uppercase text-slate-400 mb-4;
+}
+
+.article-body p {
+  @apply leading-relaxed mb-4 text-slate-100/90;
+}
+
+.article-body h2 {
+  @apply text-xl md:text-2xl font-semibold mt-6 mb-2;
+}
+
+.article-body ul {
+  @apply list-disc pl-6 mb-4 space-y-1;
+}
+
+/* Footer */
+.site-footer {
+  @apply border-t border-slate-800 mt-14 py-6 text-center text-xs text-slate-500;
+}

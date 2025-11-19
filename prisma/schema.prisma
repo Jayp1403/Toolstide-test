@@ -1,0 +1,34 @@
+// Prisma schema defining the database models for ToolsTide.  These
+// models map directly onto tables in your PostgreSQL database.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// A category groups related posts.  For example "ai-tools" or
+// "comparisons".  The slug is used in URLs and must be unique.
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String
+  slug  String @unique
+  posts Post[]
+}
+
+// A post represents a single article on the site.  Each post belongs
+// to exactly one category.  The `date` field uses DateTime but
+// clients may choose to display it in a formatted string.
+model Post {
+  id         Int      @id @default(autoincrement())
+  slug       String   @unique
+  title      String
+  excerpt    String
+  content    String
+  date       DateTime @default(now())
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId Int
+}
