@@ -24,45 +24,32 @@ export default function AdminPage() {
     setMessage(null);
 
     if (!title || !content) {
-      setMessage("Please add at least a title and content.");
+      setMessage("Please add a title and content.");
       return;
     }
 
-    setSaving(true);
-
-    // Simple slug: lowercase, hyphens, no special chars
-    const slug =
-      title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "") || `untitled-${Date.now()}`;
-
-    const date = new Date().toISOString().slice(0, 10);
-    const excerpt =
-      content.replace(/<[^>]+>/g, "").slice(0, 180) + "...";
-
-    const postObject = {
-      slug,
-      title,
-      excerpt,
-      content,
-      date,
-      category,
-    };
-
-    const json = JSON.stringify(postObject, null, 2);
-
     try {
-      await navigator.clipboard.writeText(json);
-      setMessage(
-        "Post JSON copied to clipboard. Paste it into lib/api.ts inside the posts array."
-      );
-      console.log("Post JSON:", json);
+      setSaving(true);
+
+      const res = await fetch("/api/admin/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, category, content }),
+      });
+
+      const data = await res.json();
+      console.log("Publish response", res.status, data);
+
+      if (!res.ok) {
+        setMessage(data.error || "Failed to publish.");
+      } else {
+        setMessage(`✅ Published! View: /posts/${data.slug}`);
+        setTitle("");
+        setContent("");
+      }
     } catch (err) {
-      console.log("Post JSON (copy manually):", json);
-      setMessage(
-        "Couldn't access clipboard. Open console, copy the JSON, and paste it into lib/api.ts."
-      );
+      console.error("Publish error", err);
+      setMessage("Network error — could not publish.");
     } finally {
       setSaving(false);
     }
@@ -72,31 +59,25 @@ export default function AdminPage() {
     <div className="wrapper py-10 space-y-8">
       <h1 className="text-2xl font-semibold mb-2">ToolsTide Admin</h1>
       <p className="text-sm text-slate-400 mb-6">
-        Create a new article by filling in the fields below. Preview shows how
-        it will look before you publish.
+        Fill in the details, preview, and click Publish to send your article live.
       </p>
-      <p>git add lib/api.ts</p>
-      <p>git commit -m "Add new post: My New Post"</p>
-       <p>git push</p>
 
-      {/* FORM */}
-      <div className="card p-6 space-y-4 bg-slate-900/80 border border-slate-800 rounded-xl">
+      <div className="p-6 space-y-4 bg-slate-900/80 border border-slate-800 rounded-xl">
+        {/* Title */}
         <div className="space-y-1">
           <label className="text-xs font-medium text-slate-300">Title</label>
           <input
-            className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-400"
+            className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Gemini vs ChatGPT: Which is better for daily work?"
           />
         </div>
 
+        {/* Category */}
         <div className="space-y-1">
-          <label className="text-xs font-medium text-slate-300">
-            Category
-          </label>
+          <label className="text-xs font-medium text-slate-300">Category</label>
           <select
-            className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-400"
+            className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
@@ -108,18 +89,19 @@ export default function AdminPage() {
           </select>
         </div>
 
+        {/* Content */}
         <div className="space-y-1">
           <label className="text-xs font-medium text-slate-300">
-            Content (HTML or markdown for now)
+            Content (HTML or markdown)
           </label>
           <textarea
-            className="w-full min-h-[160px] rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-400"
+            className="w-full min-h-[200px] rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Write your article content here..."
           />
         </div>
 
+        {/* Actions */}
         <div className="flex gap-3 items-center">
           <button
             type="button"
@@ -134,7 +116,7 @@ export default function AdminPage() {
             onClick={handlePublish}
             className="rounded-md border border-slate-600 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
           >
-            {saving ? "Generating..." : "Publish JSON"}
+            {saving ? "Publishing..." : "Publish"}
           </button>
 
           {message && (
@@ -143,15 +125,15 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* PREVIEW */}
+      {/* Preview */}
       {previewOpen && (
-        <div className="card p-6 bg-slate-900/80 border border-slate-800 rounded-xl">
+        <div className="p-6 bg-slate-900/80 border border-slate-800 rounded-xl">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <div className="article-meta text-[11px]">
-                {category.toUpperCase()} · PREVIEW
+              <div className="text-[11px] text-slate-400">
+                {category.toUpperCase()} — PREVIEW
               </div>
-              <h2 className="article-title text-2xl">
+              <h2 className="text-2xl font-semibold">
                 {title || "Untitled"}
               </h2>
             </div>
@@ -163,11 +145,13 @@ export default function AdminPage() {
               Close
             </button>
           </div>
+
           <div
-            className="article-body text-sm"
+            className="text-sm text-slate-200"
             dangerouslySetInnerHTML={{
               __html:
-                content.trim() || "<p>Start writing to see a preview here…</p>",
+                content.trim() ||
+                "<p class='text-slate-500'>Start writing to see preview…</p>",
             }}
           />
         </div>
