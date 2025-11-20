@@ -24,6 +24,11 @@ export default function RootLayout({
           crossOrigin="anonymous"
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7145500953992883"
         />
+        <meta
+  name="google-adsense-account"
+  content="ca-pub-7145500953992883"
+/>
+
       </head>
       <body>
         {/* Premium header component */}

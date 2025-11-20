@@ -1,39 +1,77 @@
 import type { Post } from "./types";
+import { ddb, POSTS_TABLE_NAME } from "./dynamo";
+import { ScanCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 
-/**
- * Temporary in-memory posts while we stabilise the project.
- * Later we will replace this with AWS or a real database.
- */
-const posts: Post[] = [
-
-/* All The posts go Between here  */
-
-{
-  "slug": "how-to-use-ai-to-automate-your-daily-life-in-2025-step-by-step-guide",
-  "title": "How to Use AI to Automate Your Daily Life in 2025 (Step-by-Step Guide)",
-  "excerpt": "How to Use AI to Automate Your Daily Tasks  AI automation in 2025 has reached a level where anyone—whether a business owner, student, creator, or freelancer—can easily automate rep...",
-  "content": "<h2>How to Use AI to Automate Your Daily Tasks</h2> <div> <p>AI automation in 2025 has reached a level where anyone—whether a business owner, student, creator, or freelancer—can easily automate repetitive work. According to a McKinsey report, AI automation can save individuals up to 30% of their daily workload by eliminating manual tasks like organizing files, writing emails, analyzing data, and planning schedules. With tools now more accessible and user-friendly, AI is becoming an essential part of daily life.</p> <p>The first step is identifying tasks you repeat every day: sorting emails, tracking expenses, scheduling meetings, writing responses, and generating content. Tools like ChatGPT, Google Gemini, and Microsoft Copilot can now automate writing and decision-making tasks with incredible accuracy. Meanwhile, workflow automation platforms like Zapier, Make, and IFTTT allow you to create automated triggers—for example, saving every email attachment to Google Drive or converting new leads into organized spreadsheets.</p> <p>AI can also help streamline your personal life. Smart assistants can summarize your calendar, track your goals, generate shopping lists, or even remind you of important habits. When combined with voice assistants like Alexa or Google Assistant, you can manage your entire day hands-free. The key is to start small: automate two or three tasks, then build more workflows as AI becomes part of your routine.</p> </div>",
-  "date": "2025-11-19",
-  "category": "AI Tools"
-}
-
-/* All The posts go Between here  */
-
+/** Fallback used if DynamoDB is not configured or is empty */
+const fallbackPosts: Post[] = [
+  {
+    slug: "welcome-to-toolstide",
+    title: "Welcome to ToolsTide",
+    excerpt:
+      "Your daily stream of AI tools, prompts, comparisons and productivity workflows.",
+    content:
+      "<p>Your AWS backend is connected. Use the admin page to publish real posts into DynamoDB.</p>",
+    date: "2025-11-20",
+    category: "AI Tools",
+  },
 ];
 
-export async function getPosts(): Promise<Post[]> {
-  return posts.slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+async function loadAllFromDynamo(): Promise<Post[] | null> {
+  try {
+    const res = await ddb.send(
+      new ScanCommand({ TableName: POSTS_TABLE_NAME })
+    );
+    const items = (res.Items || []) as any[];
+
+    if (!items.length) return [];
+
+    const posts: Post[] = items.map((it) => ({
+      slug: it.slug,
+      title: it.title,
+      excerpt: it.excerpt,
+      content: it.content,
+      date: it.date,
+      category: it.category,
+    }));
+
+    return posts.sort((a, b) => (a.date < b.date ? 1 : -1));
+  } catch (err) {
+    console.error("Dynamo load error:", err);
+    return null;
+  }
 }
 
-export async function getPostBySlug(slug: string): Promise<Post | null> {
-  return posts.find((p) => p.slug === slug) ?? null;
+export async function getPosts(): Promise<Post[]> {
+  const fromDb = await loadAllFromDynamo();
+  if (fromDb === null) return fallbackPosts;
+  if (!fromDb.length) return fallbackPosts;
+  return fromDb;
 }
 
 export async function getPostsByCategory(
   category: string
 ): Promise<Post[]> {
+  const posts = await getPosts();
   const normalized = category.toLowerCase();
   return posts.filter(
     (p) => p.category.toLowerCase() === normalized
   );
+}
+
+export async function getPostBySlug(
+  slug: string
+): Promise<Post | null> {
+  try {
+    const res = await ddb.send(
+      new GetCommand({
+        TableName: POSTS_TABLE_NAME,
+        Key: { slug },
+      })
+    );
+    return (res.Item as Post) || null;
+  } catch (err) {
+    console.error("Dynamo single post error:", err);
+    const all = await getPosts();
+    return all.find((p) => p.slug === slug) ?? null;
+  }
 }

@@ -1,15 +1,8 @@
 export interface Post {
-  id?: number;
   slug: string;
   title: string;
   excerpt: string;
-  content: string;
-  date: string;
+  content: string; // HTML string
+  date: string;    // "YYYY-MM-DD"
   category: string;
-}
-
-export interface Category {
-  id?: number;
-  slug: string;
-  name: string;
 }
