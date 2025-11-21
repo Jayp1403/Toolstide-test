@@ -20,11 +20,14 @@ export default function AdminPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // ---------------------------
+  // Handle Publish (Dynamo)
+  // ---------------------------
   const handlePublish = async () => {
     setMessage(null);
 
-    if (!title || !content) {
-      setMessage("Please add a title and content.");
+    if (!title.trim() || !content.trim()) {
+      setMessage("Please add a title and content before publishing.");
       return;
     }
 
@@ -38,18 +41,20 @@ export default function AdminPage() {
       });
 
       const data = await res.json();
-      console.log("Publish response", res.status, data);
+      console.log("Publish response:", res.status, data);
 
       if (!res.ok) {
-        setMessage(data.error || "Failed to publish.");
+        setMessage(data.error || "Failed to publish the article.");
       } else {
-        setMessage(`✅ Published! View: /posts/${data.slug}`);
+        setMessage(`✅ Article published! View at /posts/${data.slug}`);
+
+        // Reset form fields
         setTitle("");
         setContent("");
       }
     } catch (err) {
-      console.error("Publish error", err);
-      setMessage("Network error — could not publish.");
+      console.error("Publish error:", err);
+      setMessage("Network error — could not publish article.");
     } finally {
       setSaving(false);
     }
@@ -57,19 +62,25 @@ export default function AdminPage() {
 
   return (
     <div className="wrapper py-10 space-y-8">
-      <h1 className="text-2xl font-semibold mb-2">ToolsTide Admin</h1>
-      <p className="text-sm text-slate-400 mb-6">
-        Fill in the details, preview, and click Publish to send your article live.
+      
+      {/* Header */}
+      <h1 className="text-2xl font-semibold">ToolsTide Admin</h1>
+      <p className="text-sm text-slate-400">
+        Create your post below, preview it, and publish directly to the site.
       </p>
 
-      <div className="p-6 space-y-4 bg-slate-900/80 border border-slate-800 rounded-xl">
+      {/* FORM CONTAINER */}
+      <div className="p-6 bg-slate-900/80 border border-slate-800 rounded-xl space-y-4">
+
         {/* Title */}
         <div className="space-y-1">
           <label className="text-xs font-medium text-slate-300">Title</label>
           <input
-            className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+            className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 
+                       text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-400"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Gemini vs ChatGPT — Which one is better?"
           />
         </div>
 
@@ -82,9 +93,7 @@ export default function AdminPage() {
             onChange={(e) => setCategory(e.target.value)}
           >
             {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
+              <option key={c} value={c}>{c}</option>
             ))}
           </select>
         </div>
@@ -92,12 +101,14 @@ export default function AdminPage() {
         {/* Content */}
         <div className="space-y-1">
           <label className="text-xs font-medium text-slate-300">
-            Content (HTML or markdown)
+            Content (HTML or Markdown)
           </label>
           <textarea
-            className="w-full min-h-[200px] rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+            className="w-full min-h-[200px] rounded-md border border-slate-700 bg-slate-900 px-3 py-2 
+                       text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-400"
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            placeholder="Write your full article content here..."
           />
         </div>
 
@@ -114,7 +125,8 @@ export default function AdminPage() {
           <button
             type="button"
             onClick={handlePublish}
-            className="rounded-md border border-slate-600 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
+            className="rounded-md border border-slate-600 px-4 py-2 text-sm font-medium 
+                       text-slate-200 hover:bg-slate-800"
           >
             {saving ? "Publishing..." : "Publish"}
           </button>
@@ -125,18 +137,19 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Preview */}
+      {/* PREVIEW */}
       {previewOpen && (
         <div className="p-6 bg-slate-900/80 border border-slate-800 rounded-xl">
+
+          {/* Preview Header */}
           <div className="flex justify-between items-center mb-4">
             <div>
               <div className="text-[11px] text-slate-400">
-                {category.toUpperCase()} — PREVIEW
+                {category.toUpperCase()} • PREVIEW
               </div>
-              <h2 className="text-2xl font-semibold">
-                {title || "Untitled"}
-              </h2>
+              <h2 className="text-2xl font-semibold">{title || "Untitled"}</h2>
             </div>
+
             <button
               type="button"
               onClick={() => setPreviewOpen(false)}
@@ -146,12 +159,13 @@ export default function AdminPage() {
             </button>
           </div>
 
+          {/* Article Body Preview */}
           <div
-            className="text-sm text-slate-200"
+            className="article-body text-sm text-slate-200"
             dangerouslySetInnerHTML={{
               __html:
                 content.trim() ||
-                "<p class='text-slate-500'>Start writing to see preview…</p>",
+                "<p class='text-slate-500'>Start writing to preview your article…</p>",
             }}
           />
         </div>
