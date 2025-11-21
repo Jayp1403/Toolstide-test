@@ -9,7 +9,7 @@ export async function POST(req: Request) {
 
     if (!title || !category || !content) {
       return NextResponse.json(
-        { error: "Missing fields" },
+        { error: "Missing title, category, or content." },
         { status: 400 }
       );
     }
@@ -45,10 +45,14 @@ export async function POST(req: Request) {
     console.log("Write complete");
 
     return NextResponse.json({ ok: true, slug });
-  } catch (err) {
+  } catch (err: any) {
     console.error("Publish failed:", err);
     return NextResponse.json(
-      { error: "Failed to publish post" },
+      {
+        error:
+          err?.message ||
+          "Failed to publish post (unknown server error).",
+      },
       { status: 500 }
     );
   }
